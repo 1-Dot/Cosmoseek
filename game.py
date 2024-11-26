@@ -1,4 +1,5 @@
 import random
+import sys
 from math import cos, pi, sin, sqrt
 from sys import exit
 
@@ -6,7 +7,7 @@ import pygame
 
 from utils import *
 
-screen_rect = [0.0, 0.0, 1600.0, 900.0]
+screen_rect = [0.0, 0.0, 2400.0, 1350.0]
 camera = [0.0, 0.0, 1.0]  # x,y,scale
 is_dragging, last_mouse_pos = False, None
 camera_animation_from = [0.0, 0.0, 1.0]
@@ -15,6 +16,7 @@ camera_animation_state = 1.0
 camera_animation_frames = 8
 time_start_drag = None
 pos_start_drag = None
+is_fullscreen = False
 G = 1
 
 
@@ -27,10 +29,17 @@ class Cosmoseek:
         self.score = 0
         self.game_over_condition = False
 
-        self.WIDTH, self.HEIGHT = 1600, 900
+        # 全屏
+        if is_fullscreen:
+            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            screen_rect[2], screen_rect[3] = map(float, self.screen.get_size())
+            self.WIDTH, self.HEIGHT = int(screen_rect[2]), int(screen_rect[3])
+        else:
+            self.WIDTH, self.HEIGHT = int(screen_rect[2]), int(screen_rect[3])
+            self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.init()
 
-        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
+        # self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Cosmoseek")
         pygame.display.set_icon(pygame.image.load("assets/ship_000.png"))
         self.clock = pygame.time.Clock()
@@ -244,7 +253,7 @@ class Cosmoseek:
             self.ship.calc_main_planets(self.planets)
             self.ship.gravity_pull(self.planets)
             self.ship.atmosphere_drag(self.planets)
-            font = pygame.font.Font('assets/MiSans-Demibold.ttf', 20)
+            font = pygame.font.Font('assets/unifont-16.0.01.otf', 24)
             info2 = f'得分 {self.score}   燃料 {self.ship.fuel:.2f}   受力x {self.ship.force_x:.2f}   受力y {self.ship.force_y:.2f} 推进效率 {self.ship.thruster_efficiency:.2f}  推进力 {self.ship.thruster_power:.2f}'
             text2 = font.render(info2, True, (255, 255, 255))
             self.screen.blit(text2, (50, 100))
@@ -330,20 +339,20 @@ class Cosmoseek:
         grid_ox = (-camera[0] + grid_size_original * grid_nx) / camera[2]
         grid_ny = math.ceil(camera[1] / grid_size_original)
         grid_oy = (-camera[1] + grid_size_original * grid_ny) / camera[2]
-        for i in range(math.ceil(1600 / grid_size)):
+        for i in range(math.ceil(self.WIDTH / grid_size)):
             pygame.draw.line(
                 self.screen,
                 color,
                 (grid_ox + i * grid_size, 0),
-                (grid_ox + i * grid_size, 900),
+                (grid_ox + i * grid_size, self.HEIGHT),
                 1,
             )
-        for i in range(math.ceil(900 / grid_size)):
+        for i in range(math.ceil(self.HEIGHT / grid_size)):
             pygame.draw.line(
                 self.screen,
                 color,
                 (0, grid_oy + i * grid_size),
-                (1600, grid_oy + i * grid_size),
+                (self.WIDTH, grid_oy + i * grid_size),
                 1,
             )
 
@@ -513,13 +522,13 @@ class Planet:
         )
 
     def draw_atmosphere(self, screen, draw_x, draw_y, scale):
-        # if (
-        #     draw_x < -self.radius
-        #     or draw_x > 1600 + self.radius
-        #     or draw_y < -self.radius
-        #     or draw_y > 900 + self.radius
-        # ):
-        #     return
+        if (
+            draw_x < -self.atmosphere["radius"]
+            or draw_x > screen_rect[2] + self.atmosphere["radius"]
+            or draw_y < -self.atmosphere["radius"]
+            or draw_y > screen_rect[3] + self.atmosphere["radius"]
+        ):
+            return
         thickness = max(2, (6 - self.atmosphere["density"] / self.radius))
         colors = (
             min([int(self.color[0] / (thickness)), 255]),
@@ -538,9 +547,9 @@ class Planet:
     def draw2(self, screen, draw_x, draw_y, scale):
         if (
             draw_x < -self.radius
-            or draw_x > 1600 + self.radius
+            or draw_x > screen_rect[2] + self.radius
             or draw_y < -self.radius
-            or draw_y > 900 + self.radius
+            or draw_y > screen_rect[3] + self.radius
         ):
             return
         pygame.draw.circle(
@@ -929,6 +938,19 @@ class Ship:
         planet.provisions = {}
         self.game.land = False
         self.game.temp_message = f"降落成功，获得{stats}"
+
+
+if sys.platform == 'win32':
+    # 避免高分屏下缩放导致的模糊
+    # Sources included from:
+    # lines 63 to 71 of pyscreeze/__init__.py
+    # Do not delete this comment
+    import ctypes
+
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except AttributeError:
+        pass
 
 
 if __name__ == "__main__":
