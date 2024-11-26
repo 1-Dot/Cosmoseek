@@ -175,7 +175,9 @@ class Cosmoseek:
 
     def game_over(self):
         # 创建游戏结束提示
-        background_image = pygame.image.load("assets\game_over_bg.png").convert()
+        background_image = pygame.image.load(
+            "assets/game_over_background.png"
+        ).convert()
         background_rect = background_image.get_rect()
         self.screen.blit(background_image, background_rect)
         font = pygame.font.Font(None, 72)
@@ -556,9 +558,6 @@ class Planet:
         distance = sqrt(
             (self.x - self.ship.center[0]) ** 2 + (self.y - self.ship.center[1]) ** 2
         )
-        # if self.ship.is_landed==True:
-        #     if distance>=50:
-        #         self.ship.is_landed=False
 
         if distance <= self.radius:
             # 坠机
@@ -568,50 +567,6 @@ class Planet:
             if self.have_achieved == False:
                 self.game.score += 1
                 self.have_achieved = True
-            # else:#成功着陆
-            #     self.ship.is_landed = True
-            #     """
-            #     此处因设置音效及特效
-            #     """
-            #     #提示起飞
-            #     setoff_font = pygame.font.Font(None, 36)
-            #     setoff_text = setoff_font.render("SetOff--press'X'", True, (0, 255, 0))
-            #     setoff_rect = setoff_text.get_rect()
-            #     setoff_rect.center = (self.game.WIDTH // 2, self.game.HEIGHT // 2 + 50)
-            #     self.game.screen.blit(setoff_text, setoff_rect)
-
-            #     self.ship.velocity=[0,0,0]
-            #     #计算飞船角度
-            #     vector_x=self.ship.center[0]-self.x
-            #     vector_y=self.ship.center[1]-self.y
-            #     self.ship.angle = atan(vector_y/vector_x)*180/pi
-
-            #     self.ship.direction = [cos(self.ship.angle), sin(self.ship.angle)]
-            #     self.ship.acceleration = 0
-            #     #标记已经探索过的星球
-            #     if self.have_achieved == False:
-            #         self.game.score+=1
-            #         self.have_achieved = True
-
-            #     camera[0] = self.ship.center[0] - 0.5 * camera[2]
-            #     camera[1] = self.ship.center[1] - 0.5 * camera[3]
-
-            #     self.ship.center[0]=self.x + self.radius * cos(self.ship.angle*pi/180)
-            #     self.ship.center[1]=self.y + self.radius * sin(self.ship.angle*pi/180)
-
-            #     pygame.display.flip()
-            #     self.ship.blit_me()
-
-            #     waiting = True
-            #     while waiting:
-            #         for event in pygame.event.get():
-            #             if event.type == pygame.QUIT:
-            #                     exit()
-            #             if event.type == pygame.KEYDOWN:
-            #                 if event.key == pygame.K_q:
-            #                     exit()
-            #                 if event.key == pygame.K_x:
-            #                     waiting = False
 
 
 class Ship:
@@ -951,7 +906,7 @@ class Ship:
         self.game.message2 = (
             f"planet.radius:{planet.radius:.2f},rewards:{planet.provisions}"
         )
-        # self.game.message=f"takeoff_gravity_cost{takeoff_gravity_cost:.2f}takeoff_speed_cost{takeoff_speed_cost:.2f},takeoff_friction_cost{takeoff_friction_cost:.2f}"
+
         if self.landing_condition == "may land":
             self.game.message = f"降落消耗燃料: {takeoff_gravity_cost+takeoff_speed_cost+takeoff_friction_cost:.2f}"
         else:
@@ -973,7 +928,7 @@ class Ship:
 
         planet.provisions = {}
         self.game.land = False
-        self.game.temp_message = f"降落成功,获得{stats}"
+        self.game.temp_message = f"降落成功，获得{stats}"
 
 
 if __name__ == "__main__":
