@@ -32,3 +32,10 @@ def get_bounding_rect(width, height, angle):
 def play_sound(name):
     sound = pygame.mixer.Sound(f'assets/{name}')
     sound.play()
+
+
+def gray(color):
+    # 获取一个颜色的灰度 (稍微压暗)
+    r, g, b = color
+    gray = int((r * 299 + g * 587 + b * 114) / 1000.0 * 0.67)
+    return (gray, gray, gray)
