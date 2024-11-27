@@ -10,7 +10,7 @@ import pygame
 from utils import *
 
 screen_rect = [0.0, 0.0, 2400.0, 1350.0]
-camera = [0.0, 0.0, 1.0]  # x,y,scale--
+camera = [0.0, 0.0, 1.0]  # x,y,scale
 is_dragging, last_mouse_pos = False, None
 camera_animation_from = [0.0, 0.0, 1.0]
 camera_animation_to = [0.0, 0.0, 1.0]
