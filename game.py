@@ -1373,7 +1373,6 @@ class Ship:
             if len(stats.keys()) > 0:
                 for k in stats.keys():
                     exec(f"self.{k}+={stats[k]}")
-                # print(stats)
 
             planet.provisions = {}
             self.game.land = False
@@ -1387,7 +1386,6 @@ if sys.platform == 'win32':
     # 避免高分屏下缩放导致的模糊
     # Sources included from:
     # lines 63 to 71 of pyscreeze/__init__.py
-    # Do not delete this comment
     import ctypes
 
     try:
