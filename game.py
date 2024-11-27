@@ -24,7 +24,8 @@ G = 1
 
 min_size = 4
 pygame.font.init()
-unv_font = pygame.font.Font('assets/Unifont-Minecraft.otf', 20)
+font_20 = pygame.font.Font('assets/Unifont-Minecraft.otf', 20)
+font_24 = pygame.font.Font('assets/Unifont-Minecraft.otf', 24)
 
 
 class Cosmoseek:
@@ -104,8 +105,8 @@ class Cosmoseek:
                         ["thruster_efficiency", 1],
                         ["thruster_power", 2],
                         ["mass", -1],
-                        ["predict_nums", 1],
-                        ["predict_steps", 50],
+                        ["prediction_nums", 1],
+                        ["prediction_steps", 50],
                     ]
                 )
             else:
@@ -424,7 +425,7 @@ class Cosmoseek:
 
             info_offset = 32
 
-            font = pygame.font.Font('assets/Unifont-Minecraft.otf', 24)
+            font = font_24
             info2 = f'分数 {self.score}   燃料 {self.ship.fuel:.2f}'
             text2 = font.render(info2, True, (255, 255, 255))
             self.screen.blit(text2, (info_offset + 20, info_offset + 20))
@@ -679,20 +680,22 @@ class Planet:
         self.render_y = 0
         self.render_scale = 1
         self.draw_info_condition = False
+        self.got = False
 
     def calc_render_position(self, draw_x, draw_y, scale):
         self.render_x = draw_x
         self.render_y = draw_y
         self.render_scale = scale
+        side_factor = max(min_size, self.atmosphere["radius"] / scale)
         if self.p_id in self.ship.closest_planets and not (
-            (0 < self.render_x < self.game.WIDTH)
-            and (0 < self.render_y < self.game.HEIGHT)
+            (0 - side_factor < self.render_x < self.game.WIDTH + side_factor)
+            and (0 - side_factor < self.render_y < self.game.HEIGHT + side_factor)
         ):
 
             dx = -self.x + self.ship.center[0]
             dy = -self.y + self.ship.center[1]
             distance = math.sqrt(dx**2 + dy**2)
-            self.render_scale = distance / sqrt(self.game.HEIGHT * self.game.WIDTH)
+            self.render_scale = distance / sqrt(self.game.HEIGHT * self.game.WIDTH) * 2
             if (self.game.WIDTH / 2 - self.render_x) != 0:
                 k = (self.game.HEIGHT / 2 - self.render_y) / (
                     self.game.WIDTH / 2 - self.render_x
@@ -809,7 +812,7 @@ class Planet:
             if x + 12 * len(info) > self.game.WIDTH:
                 x -= 6 * len(info)
 
-            text = unv_font.render(info, True, (255, 255, 255))
+            text = font_20.render(info, True, (255, 255, 255))
             screen.blit(text, (x, y))
 
     def crash_land(self):
@@ -831,9 +834,28 @@ class Planet:
         #    self.have_achieved = True
 
     def draw_info(self):
+
+        information = f"星球信息: id:{self.p_id} 半径:{int(self.radius)} 质量:{int(self.mass)} 大气层半径:{int(self.atmosphere["radius"])}"
+        if not self.got:
+            check_dic = {
+                "fuel": "补充燃料",
+                "mass": "减轻飞船质量",
+                "prediction_nums": "强化预测系统",
+                "prediction_steps": "增加预测步数",
+                "thruster_efficiency": "引擎效率提升",
+                "thruster_power": "引擎功率提升",
+            }
+            show_info = []
+            for k in self.provisions.keys():
+                show_info.append(f"{check_dic[k]} {self.provisions[k]}")
+
+            random.shuffle(show_info)
+            information2 = f"可能补给: {', '.join(show_info[:2])}"
+            self.got = information2
+
         draw_x = (self.x - camera[0]) / camera[2]
         draw_y = (self.y - camera[1]) / camera[2] - self.radius / camera[2]
-        font = pygame.font.Font('assets/Unifont-Minecraft.otf', 20)
+        font = font_20
         text = font.render(
             f"半径 {self.radius:.0f}({int(self.atmosphere['radius'])})",
             True,
@@ -851,9 +873,13 @@ class Planet:
         if self.have_achieved:
             text = font.render(f"已探索", True, (255, 255, 255))
             text_rect = text.get_rect()
-            text_rect.center = (draw_x, draw_y - 72)
+            text_rect.center = (draw_x, draw_y - 96)
             self.game.screen.blit(text, text_rect)
 
+        text = font.render(self.got, True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.center = (draw_x, draw_y - 72)
+        self.game.screen.blit(text, text_rect)
         # information = f"星球信息: id:{self.p_id} 半径:{int(self.radius)} 质量:{int(self.mass)} 大气层半径:{int(self.atmosphere["radius"])}"
         # self.game.temp_message = information
 
@@ -1228,7 +1254,7 @@ class Ship:
         else:
             self.landing_condition = "may land"
 
-    def attempt_land(self, planet):
+    def attempt_land(self, planet: Planet):
         global text_temp_tick
         if planet.typ == "terrestrial":
             dx = -planet.x + self.center[0]
@@ -1257,15 +1283,21 @@ class Ship:
                     case 'fuel':
                         msg_provisions.append(f"燃料 {planet.provisions[k]:.2f}")
                     case 'thruster_power':
-                        msg_provisions.append(f"推进力 {planet.provisions[k]:.2f}")
+                        msg_provisions.append(f"引擎功率 {planet.provisions[k]:.2f}")
                     case 'thruster_efficiency':
-                        msg_provisions.append(f"推进效率 {planet.provisions[k]:.2f}")
+                        msg_provisions.append(f"引擎效率 {planet.provisions[k]:.2f}")
                     case 'mass':
                         msg_provisions.append(f"飞船质量 {planet.provisions[k]:.0f}")
-            self.game.message2 = f"最近的星球半径: {planet.radius:.2f}   补给: [{', '.join(msg_provisions)}]   PID: {planet.p_id}"
+                    case 'prediction_steps':
+                        msg_provisions.append(f"预测步数 {planet.provisions[k]:.0f}")
+                    case 'prediction_nums':
+                        msg_provisions.append(f"强化预测 {planet.provisions[k]:.0f}")
+            self.game.message2 = f"最近的星球:  {'类地行星' if planet.typ=='terrestrial' else '气体巨行星'}   半径: {planet.radius:.2f}   补给: [{', '.join(msg_provisions)}]   PID: {planet.p_id}"
             # self.game.message=f"takeoff_gravity_cost{takeoff_gravity_cost:.2f}takeoff_speed_cost{takeoff_speed_cost:.2f},takeoff_friction_cost{takeoff_friction_cost:.2f}"
             if self.landing_condition == "may land":
                 self.game.message = f"降落消耗燃料: {takeoff_gravity_cost+takeoff_speed_cost+takeoff_friction_cost:.2f}"
+            elif self.landing_condition == "already landed":
+                self.game.message = f"已经降落过了"
             else:
                 self.game.message = f"无法降落"
 
@@ -1289,6 +1321,7 @@ class Ship:
             text_temp_tick = pygame.time.get_ticks()
             self.game.temp_message = f"降落成功，获得[{', '.join(msg_provisions)}]"
             self.game.score += 1
+            planet.got = ""
         elif planet.typ == "gas_giant":
             dx = -planet.x + self.center[0]
             dy = -planet.y + self.center[1]
@@ -1311,15 +1344,21 @@ class Ship:
                     case 'fuel':
                         msg_provisions.append(f"燃料 {planet.provisions[k]:.2f}")
                     case 'thruster_power':
-                        msg_provisions.append(f"推进力 {planet.provisions[k]:.2f}")
+                        msg_provisions.append(f"引擎功率 {planet.provisions[k]:.2f}")
                     case 'thruster_efficiency':
-                        msg_provisions.append(f"推进效率 {planet.provisions[k]:.2f}")
+                        msg_provisions.append(f"引擎效率 {planet.provisions[k]:.2f}")
                     case 'mass':
                         msg_provisions.append(f"飞船质量 {planet.provisions[k]:.0f}")
-            self.game.message2 = f"最近的星球半径: {planet.radius:.2f}   补给: [{', '.join(msg_provisions)}]   PID: {planet.p_id}"
+                    case 'prediction_steps':
+                        msg_provisions.append(f"预测步数 {planet.provisions[k]:.0f}")
+                    case 'prediction_nums':
+                        msg_provisions.append(f"强化预测 {planet.provisions[k]:.0f}")
+            self.game.message2 = f"最近的星球:  {'类地行星' if planet.typ=='terrestrial' else '气体巨行星'}   半径: {planet.radius:.2f}   补给: [{', '.join(msg_provisions)}]   PID: {planet.p_id}"
             # self.game.message=f"takeoff_gravity_cost{takeoff_gravity_cost:.2f}takeoff_speed_cost{takeoff_speed_cost:.2f},takeoff_friction_cost{takeoff_friction_cost:.2f}"
             if self.landing_condition == "may land":
                 self.game.message = f"大气层采集消耗燃料: {takeoff_gravity_cost :.2f}"
+            elif self.landing_condition == "already landed":
+                self.game.message = f"已经采集过了"
             else:
                 self.game.message = f"无法采集"
 
@@ -1341,6 +1380,7 @@ class Ship:
             text_temp_tick = pygame.time.get_ticks()
             self.game.temp_message = f"降落成功，获得[{', '.join(msg_provisions)}]"
             self.game.score += 1
+            planet.got = ""
 
 
 if sys.platform == 'win32':
