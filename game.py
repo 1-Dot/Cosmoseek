@@ -289,9 +289,14 @@ class Cosmoseek:
                 camera[1] = self.ship.center[1] - 0.5 * camera[2] * screen_rect[3]
             # camera[2] = camera_animation_to[2]
 
-            self.draw_grid(800, (20, 29, 26))
-            self.draw_grid(8000, (40, 49, 46))
-            self.draw_grid(80000, (60, 69, 76))
+            # self.draw_grid(800, (20, 29, 26))
+            # self.draw_grid(8000, (40, 49, 46))
+            # self.draw_grid(80000, (60, 69, 76))
+            self.draw_grid(4000 * 4**0, 15)
+            self.draw_grid(4000 * 4**1, 20)
+            self.draw_grid(4000 * 4**2, 25)
+            self.draw_grid(4000 * 4**3, 30)
+
             # 更新位置并绘制星球
 
             # 检查星球信息
@@ -393,8 +398,9 @@ class Cosmoseek:
                     game.locating_ship = True
 
     def draw_grid(self, grid_size_original, color):
+        color = (color, color + 9, color + 16)
         grid_size = grid_size_original / camera[2]
-        if grid_size < 16:
+        if grid_size < 64:
             return
         grid_nx = math.ceil(camera[0] / grid_size_original)
         grid_ox = (-camera[0] + grid_size_original * grid_nx) / camera[2]
@@ -438,7 +444,7 @@ class Cosmoseek:
 
                 elif event.button == 4:  # 滚轮向上缩放
                     camera_animation_from = camera[:]
-                    delta = 0.2
+                    delta = 0.25
                     camera_animation_to = [
                         camera[0] + camera[2] * screen_rect[2] * delta / 2,
                         camera[1] + camera[2] * screen_rect[3] * delta / 2,
@@ -452,7 +458,7 @@ class Cosmoseek:
                     # camera[3] *= 0.95
                 elif event.button == 5:  # 滚轮向下缩放
                     camera_animation_from = camera[:]
-                    delta = 0.2
+                    delta = 0.25
                     camera_animation_to = [
                         camera[0] - camera[2] * screen_rect[2] * delta / 2,
                         camera[1] - camera[2] * screen_rect[3] * delta / 2,
@@ -528,7 +534,7 @@ class Cosmoseek:
                             self.rate *= 3
                             play_sound(f'{self.rate:.0f}.ogg')
                         else:
-                            play_sound('buzzer.ogg')
+                            play_sound('plus.ogg')
                     self.key_plus = True
                 if event.key == pygame.K_MINUS:
                     if self.key_minus == False:
@@ -536,7 +542,7 @@ class Cosmoseek:
                             self.rate /= 3
                             play_sound(f'{self.rate:.0f}.ogg')
                         else:
-                            play_sound('buzzer.ogg')
+                            play_sound('minus.ogg')
                     self.key_minus = True
                 if event.key == pygame.K_l:
                     if self.ship.landing_condition == "may land":
