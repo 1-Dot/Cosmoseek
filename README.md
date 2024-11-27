@@ -1,3 +1,7 @@
 # Cosmoseek
 
-The game Cosmoseek in 2024 Hackathon
+The game Cosmoseek
+
+Winner of the 2024 Soochow University Hackathon
+
+Main contributor: TenyantO, AX菌, 1Dot
