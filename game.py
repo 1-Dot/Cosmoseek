@@ -16,16 +16,22 @@ camera_animation_state = 1.0
 camera_animation_frames = 8
 time_start_drag = None
 pos_start_drag = None
-is_fullscreen = False
+is_fullscreen = False  # 是否全屏，发布时设置为True
 G = 1
 
 
 class Cosmoseek:
-    # 创建星球
     NUM_PLANETS = 1000
     planets = []
 
+    # 创建星球
     def __init__(self):
+        pygame.init()
+        pygame.mixer.init()
+        pygame.mixer.music.load("assets/Stargazer (Planetarium).mp3")
+        pygame.mixer.music.play(-1)
+
+        self.planets = []
         self.score = 0
         self.game_over_condition = False
 
@@ -37,7 +43,6 @@ class Cosmoseek:
         else:
             self.WIDTH, self.HEIGHT = int(screen_rect[2]), int(screen_rect[3])
             self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.init()
 
         # self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Cosmoseek")
@@ -165,8 +170,8 @@ class Cosmoseek:
         for _ in range(self.NUM_PLANETS):
             # radius = random.randint(5000, 200000)
             # mass = radius**2  # 质量与半径平方成正比
-            x = random.randint(-self.WIDTH * 1000000, self.WIDTH * 1000000)
-            y = random.randint(-self.HEIGHT * 1000000, self.HEIGHT * 1000000)
+            x = random.randint(-self.WIDTH * 10000, self.WIDTH * 10000)
+            y = random.randint(-self.HEIGHT * 10000, self.HEIGHT * 10000)
             gen_terrestrial(x, y)
             # color = (
             #    random.randint(50, 255),
@@ -187,42 +192,59 @@ class Cosmoseek:
         background_image = pygame.image.load(
             "assets/game_over_background.png"
         ).convert()
+        background_image = pygame.transform.scale(
+            background_image, (self.WIDTH, self.HEIGHT)
+        )
         background_rect = background_image.get_rect()
         self.screen.blit(background_image, background_rect)
-        font = pygame.font.Font(None, 72)
-        text = font.render("Game Over", True, (255, 0, 0))
+        font = pygame.font.Font('assets/Unifont-Minecraft-Seven.otf', 84)
+        text = font.render(f"你死了！", True, (255, 255, 255))
         text_rect = text.get_rect()
-        text_rect.center = (self.WIDTH // 2, self.HEIGHT // 2)
+        text_rect.center = (self.WIDTH // 2, self.HEIGHT // 2 - 112)
         self.screen.blit(text, text_rect)
+
+        font = pygame.font.Font('assets/Unifont-Minecraft-Seven.otf', 32)
+        text = font.render(
+            '烟花火箭 ' + ('燃料耗尽' if self.ship.fuel <= 0 else '感受到了动能'),
+            True,
+            (255, 255, 255),
+        )
+        text_rect = text.get_rect()
+        text_rect.center = (self.WIDTH // 2, self.HEIGHT // 2 - 24)
+        self.screen.blit(text, text_rect)
+
+        font = pygame.font.Font('assets/Unifont-Minecraft-Seven.otf', 32)
+        text = font.render(f"分数: {self.score}", True, (252, 252, 84))
+        text_rect = text.get_rect()
+        text_rect.center = (self.WIDTH // 2, self.HEIGHT // 2 + 24)
+        self.screen.blit(text, text_rect)
+
         # 创建重新开始提示
-        restart_font = pygame.font.Font(None, 36)
-        restart_text = restart_font.render("Restart--press'R'", True, (0, 255, 0))
+        restart_font = pygame.font.Font('assets/Unifont-Minecraft-Seven.otf', 32)
+        restart_text = restart_font.render("点按 [R] 重新开始", True, (255, 255, 255))
         restart_rect = restart_text.get_rect()
-        restart_rect.center = (self.WIDTH // 2, self.HEIGHT // 2 + 50)
+        restart_rect.center = (self.WIDTH // 2, self.HEIGHT // 2 + 108)
         self.screen.blit(restart_text, restart_rect)
         # 创建退出提示
-        quit_font = pygame.font.Font(None, 36)
-        quit_text = quit_font.render("Quit--press'Q'", True, (255, 0, 0))
+        quit_font = pygame.font.Font('assets/Unifont-Minecraft-Seven.otf', 32)
+        quit_text = quit_font.render("点按 [Q] 退出", True, (255, 255, 255))
         quit_rect = quit_text.get_rect()
-        quit_rect.center = (self.WIDTH // 2, self.HEIGHT // 2 + 100)
+        quit_rect.center = (self.WIDTH // 2, self.HEIGHT // 2 + 160)
         self.screen.blit(quit_text, quit_rect)
         pygame.display.flip()
         waiting = True
+
+        pygame.mixer.music.load("assets/Fade Out.mp3")
+        pygame.mixer.music.play(-1)
+
         while waiting:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
-                # if event.type == pygame.MOUSEBUTTONDOWN:
-                #     mouse_pos = pygame.mouse.get_pos()
-                #     if restart_rect.collidepoint(mouse_pos):
-                #         # 返回重新开始游戏的信号
-                #         return True
-                #     elif quit_rect.collidepoint(mouse_pos):
-                #         pygame.quit()
-                #         exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
+                        waiting = False
                         return True
                     if event.key == pygame.K_q:
                         exit()
@@ -253,11 +275,6 @@ class Cosmoseek:
             self.ship.calc_main_planets(self.planets)
             self.ship.gravity_pull(self.planets)
             self.ship.atmosphere_drag(self.planets)
-            font = pygame.font.Font('assets/unifont-16.0.01.otf', 24)
-            info2 = f'得分 {self.score}   燃料 {self.ship.fuel:.2f}   受力x {self.ship.force_x:.2f}   受力y {self.ship.force_y:.2f} 推进效率 {self.ship.thruster_efficiency:.2f}  推进力 {self.ship.thruster_power:.2f}'
-            text2 = font.render(info2, True, (255, 255, 255))
-            self.screen.blit(text2, (50, 100))
-
             self.ship.move(self.rate)
 
             if self.locating_ship == True:
@@ -270,6 +287,7 @@ class Cosmoseek:
             self.draw_grid(80000, (60, 69, 76))
             # 更新位置并绘制星球
             for planet in self.planets:
+                planet.crash_land()
                 planet.update_position()
                 draw_x = (planet.x - planet.radius - camera[0]) / camera[
                     2
@@ -298,37 +316,44 @@ class Cosmoseek:
             #         )
             self.ship.blit_me()
 
+            font = pygame.font.Font('assets/Unifont-Minecraft-Seven.otf', 24)
+            info2 = f'得分 {self.score}   燃料 {self.ship.fuel:.2f}'
+            text2 = font.render(info2, True, (255, 255, 255))
+            self.screen.blit(text2, (20, 20))
+
+            info5 = f'受力X {self.ship.force_x:.2f}   受力Y {self.ship.force_y:.2f}   推进效率 {self.ship.thruster_efficiency:.2f}  推进力 {self.ship.thruster_power:.2f}'
+            text5 = font.render(info5, True, (255, 255, 255))
+            self.screen.blit(text5, (20, 70))
+
             info = f'角度 {self.ship.angle:.2f}   转速 {self.ship.rotation_speed:.2f}   方向 {self.ship.direction[0]:.2f}, {self.ship.direction[1]:.2f}   加速度 {self.ship.acceleration:.2f}   速率 {self.ship.velocity[0]:.2f}, {self.ship.velocity[1]:.2f}, {self.ship.velocity[2]:.2f}'
             text = font.render(info, True, (255, 255, 255))
-            self.screen.blit(text, (50, 200))
+            self.screen.blit(text, (20, 120))
 
             # self.message = f'燃料 {self.ship.fuel:.2f}   受力x {self.ship.force_x:.2f}   受力y {self.ship.force_y:.2f}, {self.ship.direction[1]:.2f}'
             text3 = font.render(self.message, True, (255, 255, 255))  # 降落消耗燃料信息
-            self.screen.blit(text3, (50, 300))
+            self.screen.blit(text3, (20, 170))
             # print(self.message2)
             text4 = font.render(self.message2, True, (255, 255, 255))  # 星球信息
-            self.screen.blit(text4, (50, 400))
+            self.screen.blit(text4, (20, 220))
+
+            rate_info = f'变速 {self.rate:.0f}x'
+            rate_text = font.render(rate_info, True, (255, 255, 255))
+            self.screen.blit(rate_text, (20, 270))
 
             text_temp = font.render(self.temp_message, True, (255, 255, 255))
-            self.screen.blit(text_temp, (50, 500))
-
-            rate_info = f'变速 {self.rate}X'
-            rate_text = font.render(rate_info, True, (255, 255, 255))
-            self.screen.blit(rate_text, (1000, 100))
+            self.screen.blit(text_temp, (20, 320))
 
             pygame.display.flip()
 
             # 处理燃料耗尽
             if self.ship.fuel <= 0:
                 if self.game_over():
-                    game = Cosmoseek()
-                    game.run_game()
+                    self.__init__()
                     game.locating_ship = True
             # 处理游戏结束的情况
             if self.game_over_condition == True:
                 if self.game_over():
-                    game = Cosmoseek()
-                    game.run_game()
+                    self.__init__()
                     game.locating_ship = True
 
     def draw_grid(self, grid_size_original, color):
@@ -398,7 +423,10 @@ class Cosmoseek:
                     # camera[2] *= 1.05
                     # camera[3] *= 1.05
             elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1 and self.locating_ship != True:  # 左键松开停止拖动
+                if (
+                    event.button == 1 and self.locating_ship != True and pos_start_drag
+                ):  # 左键松开停止拖动
+                    is_dragging = False
                     camera_animation_from = camera[:]
                     camera_animation_to = [
                         camera[0]
@@ -413,13 +441,13 @@ class Cosmoseek:
                         / (pygame.time.get_ticks() - time_start_drag),
                         camera[2],
                     ]
+
                     # print(
                     #     (event.pos[0] - pos_start_drag[0])
                     #     / (pygame.time.get_ticks() - time_start_drag)
                     # )
                     camera_animation_frames = 64
                     camera_animation_state = 0.0
-                    is_dragging = False
             elif event.type == pygame.MOUSEMOTION:
                 if is_dragging and last_mouse_pos:
                     dx = event.pos[0] - last_mouse_pos[0]
@@ -449,21 +477,29 @@ class Cosmoseek:
                     self.ship.push_right = True
                 if event.key == pygame.K_EQUALS:
                     if self.key_plus == False:
-                        self.rate *= 3
+                        if self.rate < 729:
+                            self.rate *= 3
+                            play_sound('plus.ogg')
+                        else:
+                            play_sound('buzzer.ogg')
                     self.key_plus = True
                 if event.key == pygame.K_MINUS:
                     if self.key_minus == False:
                         if self.rate > 1:
                             self.rate /= 3
+                            play_sound('minus.ogg')
+                        else:
+                            play_sound('buzzer.ogg')
                     self.key_minus = True
                 if event.key == pygame.K_l:
-
                     if self.ship.landing_condition == "may land":
-
+                        play_sound('challenge_complete.ogg')
                         self.land = True
                     elif self.ship.landing_condition == "too far":
+                        play_sound('buzzer.ogg')
                         self.temp_message = "距离太远，无法降落"
                     elif self.ship.landing_condition == "already landed":
+                        play_sound('buzzer.ogg')
                         self.temp_message = "已经降落在这个星球上过了"
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_w:
@@ -567,9 +603,13 @@ class Planet:
         distance = sqrt(
             (self.x - self.ship.center[0]) ** 2 + (self.y - self.ship.center[1]) ** 2
         )
+        # if self.ship.is_landed==True:
+        #     if distance>=50:
+        #         self.ship.is_landed=False
 
         if distance <= self.radius:
             # 坠机
+            play_sound(f'blast1.ogg')
             self.game.game_over_condition = True
         # 进入大气圈
         if distance <= self.radius + 100:
@@ -616,7 +656,7 @@ class Ship:
         self.thruster_efficiency = 100
         self.thruster_efficiency_balance = self.thruster_efficiency
         self.prediction_steps = 600
-        self.prediction_nums = 15
+        self.prediction_nums = 16
         self.landing_pod_weight = 5
         self.landing_condition = "too far"
 
@@ -628,26 +668,26 @@ class Ship:
         s_f = self.s_f * self.thruster_power
         if self.push_middle == True:
             if self.push_left == True and self.push_right == True:
-                self.acceleration = 0.5 * s_f
+                self.acceleration = 0.7 * s_f
                 self.rotation_speed = 0.0
             elif self.push_left == True and self.push_right == False:
-                self.acceleration = 0.3 * s_f
+                self.acceleration = 0.4 * s_f
                 self.rotation_speed = 0.03
             elif self.push_left == False and self.push_right == True:
-                self.acceleration = 0.3 * s_f
+                self.acceleration = 0.4 * s_f
                 self.rotation_speed = -0.03
             elif self.push_left == False and self.push_right == False:
-                self.acceleration = 0.2 * s_f
+                self.acceleration = 0.3 * s_f
                 self.rotation_speed = 0.0
         else:
             if self.push_left == True and self.push_right == True:
                 self.acceleration = 0.2 * s_f
                 self.rotation_speed = 0.0
             elif self.push_left == True and self.push_right == False:
-                self.acceleration = 0.0 * s_f
+                self.acceleration = 0.1 * s_f
                 self.rotation_speed = 0.03
             elif self.push_left == False and self.push_right == True:
-                self.acceleration = 0.0 * s_f
+                self.acceleration = 0.1 * s_f
                 self.rotation_speed = -0.03
             elif self.push_left == False and self.push_right == False:
                 self.acceleration = 0.0 * s_f
@@ -915,11 +955,12 @@ class Ship:
         self.game.message2 = (
             f"planet.radius:{planet.radius:.2f},rewards:{planet.provisions}"
         )
-
+        # self.game.message=f"takeoff_gravity_cost{takeoff_gravity_cost:.2f}takeoff_speed_cost{takeoff_speed_cost:.2f},takeoff_friction_cost{takeoff_friction_cost:.2f}"
         if self.landing_condition == "may land":
             self.game.message = f"降落消耗燃料: {takeoff_gravity_cost+takeoff_speed_cost+takeoff_friction_cost:.2f}"
         else:
             self.game.message = f"无法降落"
+
         if not game.land:
             return
         self.fuel -= takeoff_gravity_cost
