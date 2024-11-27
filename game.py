@@ -16,7 +16,7 @@ camera_animation_state = 1.0
 camera_animation_frames = 8
 time_start_drag = None
 pos_start_drag = None
-is_fullscreen = False  # 是否全屏，发布时设置为True
+is_fullscreen = True  # 是否全屏，发布时设置为True
 G = 1
 
 
@@ -58,7 +58,13 @@ class Cosmoseek:
         self.locating_ship = False
         self.land = False
         self.temp_message = ""
+        self.mouse_pos = [0, 0]
         prizes = []
+
+        self.is_click = False
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEMOTION:
+                self.mouse_pos = event.pos
 
         for i in range(100):
             if i < 2:
@@ -286,7 +292,14 @@ class Cosmoseek:
             self.draw_grid(8000, (40, 49, 46))
             self.draw_grid(80000, (60, 69, 76))
             # 更新位置并绘制星球
+
+            # 检查星球信息
+            # main_planets=[self.planets[x] for x in self.ship.main_planets]
+            # for planet in main_planets:
+            #     planet.info_display()
+
             for planet in self.planets:
+                # planet.info_display()
                 planet.crash_land()
                 planet.update_position()
                 draw_x = (planet.x - planet.radius - camera[0]) / camera[
@@ -297,6 +310,18 @@ class Cosmoseek:
                 ] + planet.radius / camera[2]
                 planet.draw_atmosphere(self.screen, draw_x, draw_y, camera[2])
                 planet.draw2(self.screen, draw_x, draw_y, camera[2])
+
+                # 监测鼠标点击星球
+                distance = sqrt(
+                    (draw_x - self.mouse_pos[0]) ** 2
+                    + (draw_y - self.mouse_pos[1]) ** 2
+                )
+                if self.is_click == True and distance <= planet.radius / camera[2]:
+                    planet.draw_info_condition = True
+                else:
+                    planet.draw_info_condition = False
+                planet.draw_info()
+
             self.ship.predict(self.planets, self.rate, camera[2])
             self.ship.draw_prediction(self.screen, camera, screen_rect)
             self.ship.check_landing_conditions()
@@ -387,13 +412,19 @@ class Cosmoseek:
             if event.type == pygame.QUIT:
                 exit()
             # 鼠标操作
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1 and self.locating_ship != True:  # 左键按下开始拖动
-                    is_dragging = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # 监测鼠标位置 传参便于其他类调用
+                self.mouse_pos = event.pos
+                if event.button == 1:  # 左键按下开始拖动
+                    self.is_click = True
                     camera_animation_state = 1.0
                     time_start_drag = pygame.time.get_ticks()
                     last_mouse_pos = event.pos
                     pos_start_drag = event.pos
+
+                    if self.locating_ship != True:
+                        is_dragging = True
+
                 elif event.button == 4:  # 滚轮向上缩放
                     camera_animation_from = camera[:]
                     delta = 0.2
@@ -422,11 +453,13 @@ class Cosmoseek:
                     # camera[1] -= camera[3] * 0.05 / 2
                     # camera[2] *= 1.05
                     # camera[3] *= 1.05
-            elif event.type == pygame.MOUSEBUTTONUP:
+            else:
+                self.is_click = False
+
+            if event.type == pygame.MOUSEBUTTONUP:
                 if (
                     event.button == 1 and self.locating_ship != True and pos_start_drag
                 ):  # 左键松开停止拖动
-                    is_dragging = False
                     camera_animation_from = camera[:]
                     camera_animation_to = [
                         camera[0]
@@ -441,21 +474,23 @@ class Cosmoseek:
                         / (pygame.time.get_ticks() - time_start_drag),
                         camera[2],
                     ]
-
                     # print(
                     #     (event.pos[0] - pos_start_drag[0])
                     #     / (pygame.time.get_ticks() - time_start_drag)
                     # )
                     camera_animation_frames = 64
                     camera_animation_state = 0.0
-            elif event.type == pygame.MOUSEMOTION:
+                    is_dragging = False
+
+            if event.type == pygame.MOUSEMOTION:
                 if is_dragging and last_mouse_pos:
                     dx = event.pos[0] - last_mouse_pos[0]
                     dy = event.pos[1] - last_mouse_pos[1]
                     camera[0] -= dx * camera[2]
                     camera[1] -= dy * camera[2]
                     last_mouse_pos = event.pos
-            elif event.type == pygame.KEYDOWN:
+
+            if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
                     exit()
 
@@ -548,6 +583,7 @@ class Planet:
         self.game = game
         self.have_achieved = False
         self.provisions = provisions
+        self.draw_info_condition = False
 
     def draw(self, screen, window_x, window_y, scale):
         pygame.draw.circle(
@@ -617,6 +653,33 @@ class Planet:
                 self.game.score += 1
                 self.have_achieved = True
 
+    # def info_display(self):
+    #     for event in pygame.event.get():
+    #         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+    #             mouse_pos=event.pos
+    #             distance = sqrt((self.x-mouse_pos[0])**2+(self.y-mouse_pos[1])**2)
+    #             if distance<=self.radius:
+    #                 self.draw_info_condition = True
+    #             else:
+    #                 self.draw_info_condition = False
+
+    def draw_info(self):
+        if self.draw_info_condition == True:
+            draw_x = (self.x - self.radius - camera[0]) / camera[
+                2
+            ] + self.radius / camera[2]
+            draw_y = (self.y - camera[1]) / camera[2] + self.radius / camera[2]
+            font = pygame.font.Font('assets/Unifont-Minecraft-Seven.otf', 20)
+            text = font.render(f"半径 {self.radius:.0f}", True, (255, 255, 255))
+            text_rect = text.get_rect()
+            text_rect.center = (draw_x, draw_y + 16)
+            self.game.screen.blit(text, text_rect)
+
+            text = font.render(f"质量 {self.mass:.0f}", True, (255, 255, 255))
+            text_rect = text.get_rect()
+            text_rect.center = (draw_x, draw_y + 36)
+            self.game.screen.blit(text, text_rect)
+
 
 class Ship:
     def __init__(self, game):
@@ -651,7 +714,7 @@ class Ship:
         self.air_s = 1  # 受到空气摩擦力的飞船面积
         self.force_x = 0
         self.force_y = 0
-        self.fuel = 10000
+        self.fuel = 10000  # 燃料
         self.thruster_power = 100
         self.thruster_efficiency = 100
         self.thruster_efficiency_balance = self.thruster_efficiency

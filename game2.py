@@ -1,7 +1,9 @@
 import random
 from math import cos, pi, sin, sqrt
 from sys import exit
+
 import pygame
+
 from utils import *
 
 screen_rect = [0.0, 0.0, 1600.0, 900.0]
@@ -19,62 +21,91 @@ G = 1
 class Cosmoseek:
     NUM_PLANETS = 1000
     planets = []
-# 创建星球
+
+    # 创建星球
     def __init__(self):
-        #TODO
+        # TODO
         """
         背景音乐
         (应该是这里吧唔)
         """
-        self.planets=[]
-        self.score=0
-        self.game_over_condition=False
+        self.planets = []
+        self.score = 0
+        self.game_over_condition = False
 
         self.WIDTH, self.HEIGHT = 1600, 900
         pygame.init()
 
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Cosmoseek")
-        pygame.display.set_icon(pygame.image.load("PYGAME_ver_9/assets/ship_000.png"))
+        pygame.display.set_icon(pygame.image.load("assets/ship_000.png"))
         self.clock = pygame.time.Clock()
-        self.message=""
-        self.message2=""
+        self.message = ""
+        self.message2 = ""
         self.ship = Ship(self)
         self.rungame = True
         self.rate = 1
         self.key_minus = False
         self.key_plus = False
         self.locating_ship = False
-        self.land=False
-        self.temp_message=""
+        self.land = False
+        self.temp_message = ""
         prizes = []
         self.is_click = False
         for event in pygame.event.get():
             if event.type == pygame.MOUSEMOTION:
-                    self.mouse_pos = event.pos
+                self.mouse_pos = event.pos
 
         for i in range(100):
             if i < 2:
                 prizes.append([["fuel", 50], ["fuel", 60], ["fuel", 70]])
             elif i < 4:
-                prizes.append([["fuel", 50], ["fuel", 60], ["fuel", 70], ["thruster_efficiency", 1]])
+                prizes.append(
+                    [
+                        ["fuel", 50],
+                        ["fuel", 60],
+                        ["fuel", 70],
+                        ["thruster_efficiency", 1],
+                    ]
+                )
             elif i < 7:
                 prizes.append(
-                    [["fuel", 50], ["fuel", 60], ["fuel", 70], ["thruster_efficiency", 1], ["thruster_power", 2]])
+                    [
+                        ["fuel", 50],
+                        ["fuel", 60],
+                        ["fuel", 70],
+                        ["thruster_efficiency", 1],
+                        ["thruster_power", 2],
+                    ]
+                )
             elif i < 10:
                 prizes.append(
-                    [["fuel", 50], ["fuel", 60], ["fuel", 70], ["thruster_efficiency", 1], ["thruster_power", 2],
-                     ["mass", -1]])
+                    [
+                        ["fuel", 50],
+                        ["fuel", 60],
+                        ["fuel", 70],
+                        ["thruster_efficiency", 1],
+                        ["thruster_power", 2],
+                        ["mass", -1],
+                    ]
+                )
             else:
                 prizes.append(
-                    [["fuel", 50], ["fuel", 60], ["fuel", 70], ["thruster_efficiency", 1], ["thruster_power", 2]])
+                    [
+                        ["fuel", 50],
+                        ["fuel", 60],
+                        ["fuel", 70],
+                        ["thruster_efficiency", 1],
+                        ["thruster_power", 2],
+                    ]
+                )
 
         def gen_terrestrial(x, y):
             if True:
                 if True:
                     typ = "terrestrial"
                     radius = max(random.gauss(8000, 4000), 1000)
-                    mass = radius ** 2 * random.uniform(0.5, 2)  # 质量与半径平方成正比
+                    mass = radius**2 * random.uniform(0.5, 2)  # 质量与半径平方成正比
 
                     color = (
                         random.randint(50, 255),
@@ -86,10 +117,15 @@ class Cosmoseek:
                         "density": sqrt(mass) * max(0.01, random.gauss(0.2, 3)),
                         "type": "A",
                     }
-                    #print(radius, mass)
-                    difficulty = 2000 + radius + sqrt(mass) + sqrt(
-                        atmosphere["density"] * (atmosphere["radius"] - radius)) * 1e-3
-                    #print(difficulty)
+                    # print(radius, mass)
+                    difficulty = (
+                        2000
+                        + radius
+                        + sqrt(mass)
+                        + sqrt(atmosphere["density"] * (atmosphere["radius"] - radius))
+                        * 1e-3
+                    )
+                    # print(difficulty)
                     t_difficulty = difficulty
                     prize_tier = 0
                     t_prize = []
@@ -101,7 +137,7 @@ class Cosmoseek:
                             t_prize.append(random.choice(prizes[prize_tier + 1]))
                         else:
                             t_prize.append(random.choice(prizes[prize_tier]))
-                        while (random.uniform(0, 1) > 0.8):
+                        while random.uniform(0, 1) > 0.8:
                             t_prize.append(random.choice(prizes[prize_tier]))
                     rewards = {}
                     for p in t_prize:
@@ -110,32 +146,46 @@ class Cosmoseek:
                         else:
                             rewards[p[0]] = p[1]
             self.planets.append(
-                Planet(_, x, y, radius, mass, color, 0, 0, True, atmosphere, self.ship, self,rewards))
+                Planet(
+                    _,
+                    x,
+                    y,
+                    radius,
+                    mass,
+                    color,
+                    0,
+                    0,
+                    True,
+                    atmosphere,
+                    self.ship,
+                    self,
+                    rewards,
+                )
+            )
 
         for _ in range(self.NUM_PLANETS):
-            #radius = random.randint(5000, 200000)
-            #mass = radius**2  # 质量与半径平方成正比
+            # radius = random.randint(5000, 200000)
+            # mass = radius**2  # 质量与半径平方成正比
             x = random.randint(-self.WIDTH * 10000, self.WIDTH * 10000)
             y = random.randint(-self.HEIGHT * 10000, self.HEIGHT * 10000)
-            gen_terrestrial(x,y)
-            #color = (
+            gen_terrestrial(x, y)
+            # color = (
             #    random.randint(50, 255),
             #    random.randint(50, 255),
             #    random.randint(50, 255),
-            #)
-            #atmosphere = {
+            # )
+            # atmosphere = {
             #    "radius": radius * random.uniform(1, 3),
             #    "density": radius * random.uniform(1, 3),
             #    "type": "A",
-            #}
-            #self.planets.append(
+            # }
+            # self.planets.append(
             #    Planet(_, x, y, radius, mass, color, 0, 0, True, atmosphere,self.ship,self)
-            #)
-
+            # )
 
     def game_over(self):
-        #创建游戏结束提示
-        background_image = pygame.image.load("PYGAME_ver_9/assets/game_over_bg.png").convert()
+        # 创建游戏结束提示
+        background_image = pygame.image.load("assets/game_over_bg.png").convert()
         background_rect = background_image.get_rect()
         self.screen.blit(background_image, background_rect)
         font = pygame.font.Font(None, 72)
@@ -158,7 +208,7 @@ class Cosmoseek:
         pygame.display.flip()
         waiting = True
         while waiting:
-            #TODO
+            # TODO
             """
             游戏结束后等待操作的音效
             """
@@ -168,7 +218,7 @@ class Cosmoseek:
                     exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
-                        waiting=False
+                        waiting = False
                         return True
                     if event.key == pygame.K_q:
                         exit()
@@ -199,7 +249,7 @@ class Cosmoseek:
             self.ship.calc_main_planets(self.planets)
             self.ship.gravity_pull(self.planets)
             self.ship.atmosphere_drag(self.planets)
-            font = pygame.font.Font('PYGAME_ver_9/assets/MiSans-Demibold.ttf', 20)
+            font = pygame.font.Font('assets/MiSans-Demibold.ttf', 20)
             info2 = f'得分 {self.score}   燃料 {self.ship.fuel:.2f}   受力x {self.ship.force_x:.2f}   受力y {self.ship.force_y:.2f} 推进效率 {self.ship.thruster_efficiency:.2f}  推进力 {self.ship.thruster_power:.2f}'
             text2 = font.render(info2, True, (255, 255, 255))
             self.screen.blit(text2, (50, 100))
@@ -215,8 +265,8 @@ class Cosmoseek:
             self.draw_grid(8000, (40, 49, 46))
             self.draw_grid(80000, (60, 69, 76))
             # 更新位置并绘制星球
-            
-            #检查星球信息
+
+            # 检查星球信息
             # main_planets=[self.planets[x] for x in self.ship.main_planets]
             # for planet in main_planets:
             #     planet.info_display()
@@ -234,15 +284,20 @@ class Cosmoseek:
                 planet.draw_atmosphere(self.screen, draw_x, draw_y, camera[2])
                 planet.draw2(self.screen, draw_x, draw_y, camera[2])
 
-                #监测鼠标点击星球
-                distance = sqrt((draw_x-self.mouse_pos[0])**2+(draw_y-self.mouse_pos[1])**2)
-                if self.is_click==True and distance<=planet.radius/camera[2]:
+                # 监测鼠标点击星球
+                if not self.mouse_pos:
+                    continue
+                distance = sqrt(
+                    (draw_x - self.mouse_pos[0]) ** 2
+                    + (draw_y - self.mouse_pos[1]) ** 2
+                )
+                if self.is_click == True and distance <= planet.radius / camera[2]:
                     planet.draw_info_condition = True
                 else:
                     planet.draw_info_condition = False
                 planet.draw_info()
 
-            self.ship.predict(self.planets,  self.rate, camera[2])
+            self.ship.predict(self.planets, self.rate, camera[2])
             self.ship.draw_prediction(self.screen, camera, screen_rect)
             self.ship.check_landing_conditions()
             self.ship.attempt_land(self.planets[self.ship.main_planets[0]])
@@ -261,16 +316,15 @@ class Cosmoseek:
             #         )
             self.ship.blit_me()
 
-
             info = f'{self.mouse_pos} {self.is_click} 角度 {self.ship.angle:.2f}   转速 {self.ship.rotation_speed:.2f}   方向 {self.ship.direction[0]:.2f}, {self.ship.direction[1]:.2f}   加速度 {self.ship.acceleration:.2f}   速率 {self.ship.velocity[0]:.2f}, {self.ship.velocity[1]:.2f}, {self.ship.velocity[2]:.2f}'
             text = font.render(info, True, (255, 255, 255))
             self.screen.blit(text, (50, 200))
 
-            #self.message = f'燃料 {self.ship.fuel:.2f}   受力x {self.ship.force_x:.2f}   受力y {self.ship.force_y:.2f}, {self.ship.direction[1]:.2f}'
-            text3 = font.render(self.message, True, (255, 255, 255)) #降落消耗燃料信息
+            # self.message = f'燃料 {self.ship.fuel:.2f}   受力x {self.ship.force_x:.2f}   受力y {self.ship.force_y:.2f}, {self.ship.direction[1]:.2f}'
+            text3 = font.render(self.message, True, (255, 255, 255))  # 降落消耗燃料信息
             self.screen.blit(text3, (50, 300))
-            #print(self.message2)
-            text4 = font.render(self.message2, True, (255, 255, 255)) #星球信息
+            # print(self.message2)
+            text4 = font.render(self.message2, True, (255, 255, 255))  # 星球信息
             self.screen.blit(text4, (50, 400))
 
             text_temp = font.render(self.temp_message, True, (255, 255, 255))
@@ -282,13 +336,13 @@ class Cosmoseek:
 
             pygame.display.flip()
 
-            #处理燃料耗尽
-            if self.ship.fuel<=0:
+            # 处理燃料耗尽
+            if self.ship.fuel <= 0:
                 if self.game_over():
                     self.__init__()
                     game.locating_ship = True
-            #处理游戏结束的情况
-            if self.game_over_condition==True:
+            # 处理游戏结束的情况
+            if self.game_over_condition == True:
                 if self.game_over():
                     self.__init__()
                     game.locating_ship = True
@@ -323,12 +377,12 @@ class Cosmoseek:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
-            #鼠标操作
+            # 鼠标操作
             if event.type == pygame.MOUSEBUTTONDOWN:
-                #监测鼠标位置 传参便于其他类调用
+                # 监测鼠标位置 传参便于其他类调用
                 self.mouse_pos = event.pos
                 if event.button == 1:  # 左键按下开始拖动
-                    self.is_click=True
+                    self.is_click = True
                     camera_animation_state = 1.0
                     time_start_drag = pygame.time.get_ticks()
                     last_mouse_pos = event.pos
@@ -366,7 +420,7 @@ class Cosmoseek:
                     # camera[2] *= 1.05
                     # camera[3] *= 1.05
             else:
-                self.is_click=False
+                self.is_click = False
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1 and self.locating_ship != True:  # 左键松开停止拖动
@@ -431,12 +485,12 @@ class Cosmoseek:
                     self.key_minus = True
                 if event.key == pygame.K_l:
 
-                    if self.ship.landing_condition=="may land":
+                    if self.ship.landing_condition == "may land":
 
-                        self.land=True
+                        self.land = True
                     elif self.ship.landing_condition == "too far":
-                        self.temp_message="距离太远，无法降落"
-                    elif self.ship.landing_condition=="already landed":
+                        self.temp_message = "距离太远，无法降落"
+                    elif self.ship.landing_condition == "already landed":
                         self.temp_message = "已经降落在这个星球上过了"
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_w:
@@ -455,7 +509,22 @@ class Cosmoseek:
 
 # 星球类
 class Planet:
-    def __init__(self, p_id, x, y, radius, mass, color, vx, vy, is_still, atmosphere,ship,game,provisions):
+    def __init__(
+        self,
+        p_id,
+        x,
+        y,
+        radius,
+        mass,
+        color,
+        vx,
+        vy,
+        is_still,
+        atmosphere,
+        ship,
+        game,
+        provisions,
+    ):
         self.p_id = p_id
         self.x = x
         self.y = y
@@ -466,12 +535,11 @@ class Planet:
         self.vy = vy  # 初始Y速度
         self.is_still = is_still
         self.atmosphere = atmosphere
-        self.ship=ship
-        self.game=game
+        self.ship = ship
+        self.game = game
         self.have_achieved = False
-        self.provisions=provisions
+        self.provisions = provisions
         self.draw_info_condition = False
-
 
     def draw(self, screen, window_x, window_y, scale):
         pygame.draw.circle(
@@ -489,17 +557,17 @@ class Planet:
         #     or draw_y > 900 + self.radius
         # ):
         #     return
-        thickness = max(2,(6 - self.atmosphere["density"] / self.radius))
-        colors=(
-                min([int(self.color[0] / (thickness)), 255]),
-                min([int(self.color[1] / (thickness)), 255]),
-                min([int(self.color[2] / (thickness)), 255]),
-                0,
-            )
-        #print(colors,thickness)
+        thickness = max(2, (6 - self.atmosphere["density"] / self.radius))
+        colors = (
+            min([int(self.color[0] / (thickness)), 255]),
+            min([int(self.color[1] / (thickness)), 255]),
+            min([int(self.color[2] / (thickness)), 255]),
+            0,
+        )
+        # print(colors,thickness)
         pygame.draw.circle(
-            screen,colors
-            ,
+            screen,
+            colors,
             (int(draw_x), int(draw_y)),
             int(self.atmosphere["radius"] / scale),
         )
@@ -513,7 +581,10 @@ class Planet:
         ):
             return
         pygame.draw.circle(
-            screen, self.color, (int(draw_x), int(draw_y)), max(1,int(self.radius / scale))
+            screen,
+            self.color,
+            (int(draw_x), int(draw_y)),
+            max(1, int(self.radius / scale)),
         )
 
     def update_position(self):
@@ -521,22 +592,24 @@ class Planet:
         self.y += self.vy
 
     def crash_land(self):
-        distance=sqrt((self.x-self.ship.center[0])**2+(self.y-self.ship.center[1])**2)
+        distance = sqrt(
+            (self.x - self.ship.center[0]) ** 2 + (self.y - self.ship.center[1]) ** 2
+        )
         # if self.ship.is_landed==True:
         #     if distance>=50:
         #         self.ship.is_landed=False
 
-        if distance<=self.radius:
-            #坠机
-            #TODO
+        if distance <= self.radius:
+            # 坠机
+            # TODO
             """
             坠毁音效
             """
-            self.game.game_over_condition=True
-        #进入大气圈
-        if distance<=self.radius+100:
+            self.game.game_over_condition = True
+        # 进入大气圈
+        if distance <= self.radius + 100:
             if self.have_achieved == False:
-                self.game.score+=1
+                self.game.score += 1
                 self.have_achieved = True
 
     # def info_display(self):
@@ -550,7 +623,7 @@ class Planet:
     #                 self.draw_info_condition = False
 
     def draw_info(self):
-        if self.draw_info_condition== True:
+        if self.draw_info_condition == True:
             draw_x = (self.x - self.radius - camera[0]) / camera[
                 2
             ] + self.radius / camera[2]
@@ -558,11 +631,12 @@ class Planet:
                 2
             ] + self.radius / camera[2]
             font = pygame.font.Font(None, 24)
-            text = font.render(f"radius:{self.radius:.2f} mass:{self.mass:.2f}", True, (30, 100, 60))
+            text = font.render(
+                f"radius:{self.radius:.2f} mass:{self.mass:.2f}", True, (30, 100, 60)
+            )
             text_rect = text.get_rect()
-            text_rect.center = (draw_x,draw_y)
+            text_rect.center = (draw_x, draw_y)
             self.game.screen.blit(text, text_rect)
-
 
 
 class Ship:
@@ -572,7 +646,7 @@ class Ship:
         self.game = game
         self.screen = game.screen
         self.screen_rect = game.screen.get_rect()
-        self.image = pygame.image.load("PYGAME_ver_9/assets/ship_000.png")
+        self.image = pygame.image.load("assets/ship_000.png")
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.center = [
@@ -593,25 +667,26 @@ class Ship:
         self.velocity = [0.0, 0.0, 0.0]  # 依次为v v_x v_y
         self.main_planets = [0 * 5]
         self.mass = 100  # 质量，用于计算加速度
-        self.mass_balance=100
+        self.mass_balance = 100
         self.friction_factor = 1e-8  # 大气层的摩擦系数
         self.air_s = 1  # 受到空气摩擦力的飞船面积
         self.force_x = 0
         self.force_y = 0
-        self.fuel=10000#燃料
-        self.thruster_power=100
-        self.thruster_efficiency=100
-        self.thruster_efficiency_balance=self.thruster_efficiency
-        self.prediction_steps=600
-        self.prediction_nums=15
+        self.fuel = 10000  # 燃料
+        self.thruster_power = 100
+        self.thruster_efficiency = 100
+        self.thruster_efficiency_balance = self.thruster_efficiency
+        self.prediction_steps = 600
+        self.prediction_nums = 15
         self.landing_pod_weight = 5
-        self.landing_condition="too far"
+        self.landing_condition = "too far"
+
     def A_V(self):
         # 响应用户输入
         self.image = pygame.image.load(
-            f"PYGAME_ver_9/assets/ship_{int(self.push_left)}{int(self.push_middle)}{int(self.push_right)}.png"
+            f"assets/ship_{int(self.push_left)}{int(self.push_middle)}{int(self.push_right)}.png"
         )
-        s_f=self.s_f*self.thruster_power
+        s_f = self.s_f * self.thruster_power
         if self.push_middle == True:
             if self.push_left == True and self.push_right == True:
                 self.acceleration = 0.7 * s_f
@@ -646,10 +721,18 @@ class Ship:
 
         self.force_x += self.direction[1] * self.acceleration
         self.force_y += self.direction[0] * self.acceleration
-        if self.acceleration>0:
-            self.fuel-=self.acceleration/(self.thruster_efficiency/self.thruster_efficiency_balance)*self.game.rate
-        elif self.acceleration<0:
-            self.fuel+=self.acceleration/(self.thruster_efficiency/self.thruster_efficiency_balance)*self.game.rate
+        if self.acceleration > 0:
+            self.fuel -= (
+                self.acceleration
+                / (self.thruster_efficiency / self.thruster_efficiency_balance)
+                * self.game.rate
+            )
+        elif self.acceleration < 0:
+            self.fuel += (
+                self.acceleration
+                / (self.thruster_efficiency / self.thruster_efficiency_balance)
+                * self.game.rate
+            )
         self.velocity[0] = sqrt(self.velocity[1] ** 2 + self.velocity[2] ** 2.0)
 
         # 调整飞船姿态
@@ -669,10 +752,10 @@ class Ship:
         )
 
     def move(self, rate):
-        self.velocity[2] += self.force_x / (self.mass/self.mass_balance) * rate
-        self.velocity[1] += self.force_y / (self.mass/self.mass_balance) * rate
+        self.velocity[2] += self.force_x / (self.mass / self.mass_balance) * rate
+        self.velocity[1] += self.force_y / (self.mass / self.mass_balance) * rate
         # 更新飞船位置
-        self.velocity[0]=sqrt(self.velocity[2]**2+self.velocity[1]**2)
+        self.velocity[0] = sqrt(self.velocity[2] ** 2 + self.velocity[1] ** 2)
         self.center[0] -= self.velocity[2] * rate  # x
         self.center[1] -= self.velocity[1] * rate  # y
         self.force_x = 0
@@ -707,16 +790,20 @@ class Ship:
             distance = math.sqrt(dx**2 + dy**2)
             if distance > 0:  # 避免除以零
 
-                force = G * planet.mass * (self.mass/self.mass_balance) / (distance**2)
+                force = (
+                    G * planet.mass * (self.mass / self.mass_balance) / (distance**2)
+                )
 
                 ax = force * dx / distance
                 ay = force * dy / distance
                 self.force_x += ax
                 self.force_y += ay
 
-    def calc_main_planets(self, planets, nums="use_default"):  # 得到主要影响的星球的编号
-        if nums=="use_default":
-            nums=self.prediction_nums
+    def calc_main_planets(
+        self, planets, nums="use_default"
+    ):  # 得到主要影响的星球的编号
+        if nums == "use_default":
+            nums = self.prediction_nums
         # print(self.main_planets)
         total_forces = [0, 0]
         nums = min(nums, len(planets))
@@ -728,7 +815,9 @@ class Ship:
             distance = math.sqrt(dx**2 + dy**2)
             if distance > 0:  # 避免除以零
 
-                force = G * planet.mass * (self.mass/self.mass_balance) / (distance**2)
+                force = (
+                    G * planet.mass * (self.mass / self.mass_balance) / (distance**2)
+                )
                 x_force = force * dx / distance
                 y_force = force * dy / distance
                 total_forces[0] += x_force
@@ -745,8 +834,8 @@ class Ship:
 
         self.main_planets = [t[1] for t in temp_mains]
 
-    def predict(self, planets, rate, scale,steps="use_default"):
-        if steps=="use_default":
+    def predict(self, planets, rate, scale, steps="use_default"):
+        if steps == "use_default":
             steps = self.prediction_steps
         v_x = self.center[0]
         v_y = self.center[1]
@@ -754,8 +843,8 @@ class Ship:
         v_force_y = self.force_y
         v_x_v = self.velocity[2]
         v_y_v = self.velocity[1]
-        v_x_v += v_force_x / (self.mass/self.mass_balance) * rate
-        v_y_v += v_force_y / (self.mass/self.mass_balance) * rate
+        v_x_v += v_force_x / (self.mass / self.mass_balance) * rate
+        v_y_v += v_force_y / (self.mass / self.mass_balance) * rate
         v_x -= v_x_v * rate  # x
         v_y -= v_y_v * rate  # y
         v_force_x = 0
@@ -777,14 +866,19 @@ class Ship:
                     end = True
                 if distance > 0:  # 避免除以零
 
-                    force = G * planet.mass * (self.mass/self.mass_balance) / (distance**2)
+                    force = (
+                        G
+                        * planet.mass
+                        * (self.mass / self.mass_balance)
+                        / (distance**2)
+                    )
 
                     ax = force * dx / distance
                     ay = force * dy / distance
                     v_force_x += ax
                     v_force_y += ay
-            v_x_v += v_force_x / (self.mass/self.mass_balance) * sqrt(scale)
-            v_y_v += v_force_y / (self.mass/self.mass_balance) * sqrt(scale)
+            v_x_v += v_force_x / (self.mass / self.mass_balance) * sqrt(scale)
+            v_y_v += v_force_y / (self.mass / self.mass_balance) * sqrt(scale)
             v_x -= v_x_v * sqrt(scale)  # x
             v_y -= v_y_v * sqrt(scale)  # y
             v_force_x = 0
@@ -811,7 +905,7 @@ class Ship:
         atmosphere_density = planet.atmosphere["density"]
         atmosphere_type = planet.atmosphere["type"]
         distance_2 = (self.center[0] - planet.x) ** 2 + (self.center[1] - planet.y) ** 2
-        if atmosphere_radius - planet.radius==0: #无大气
+        if atmosphere_radius - planet.radius == 0:  # 无大气
             return
         place_factor = 1 - (math.sqrt(distance_2) - planet.radius) / (
             atmosphere_radius - planet.radius
@@ -834,73 +928,87 @@ class Ship:
                 )
                 self.force_x += -force_x
                 self.force_y += -force_y
+
     # def stats_change(self,stats):
     #     # dic={
-        #     "thruster_power":self.thruster_power,
-        #     "mass":self.mass,
-        #     "friction_factor":self.friction_factor,
-        #     "fuel":self.fuel,
-        #     "air_s":self.air_s,
-        #     "thruster_efficiency":self.thruster_efficiency
-        # }
-        # for k in stats.keys():
-        #     dic[k]+=stats[k]
+    #     "thruster_power":self.thruster_power,
+    #     "mass":self.mass,
+    #     "friction_factor":self.friction_factor,
+    #     "fuel":self.fuel,
+    #     "air_s":self.air_s,
+    #     "thruster_efficiency":self.thruster_efficiency
+    # }
+    # for k in stats.keys():
+    #     dic[k]+=stats[k]
     def check_landing_conditions(self):
-        planet=self.game.planets[self.main_planets[0]]
+        planet = self.game.planets[self.main_planets[0]]
         dx = -planet.x + self.center[0]
         dy = -planet.y + self.center[1]
-        distance = math.sqrt(dx ** 2 + dy ** 2)
+        distance = math.sqrt(dx**2 + dy**2)
 
-        if distance>5*planet.radius:
-            self.landing_condition="too far"
+        if distance > 5 * planet.radius:
+            self.landing_condition = "too far"
         elif planet.have_achieved:
-            self.landing_condition="already landed"
+            self.landing_condition = "already landed"
         else:
-            self.landing_condition="may land"
+            self.landing_condition = "may land"
 
-    def attempt_land(self,planet):
+    def attempt_land(self, planet):
 
         dx = -planet.x + self.center[0]
         dy = -planet.y + self.center[1]
-        distance = math.sqrt(dx ** 2 + dy ** 2)
-        takeoff_gravity_cost=planet.mass*G*self.landing_pod_weight*(distance-planet.radius)/1e11/3
-        takeoff_speed_cost=self.velocity[0]**2*self.landing_pod_weight/1e3/3
-        takeoff_friction_cost=(planet.atmosphere["radius"]-planet.radius)*self.velocity[0]*planet.atmosphere["density"]/1e11
-        self.game.message2 = f"planet.radius:{planet.radius:.2f},rewards:{planet.provisions}"
-        #self.game.message=f"takeoff_gravity_cost{takeoff_gravity_cost:.2f}takeoff_speed_cost{takeoff_speed_cost:.2f},takeoff_friction_cost{takeoff_friction_cost:.2f}"
-        if self.landing_condition=="may land":
-            self.game.message=f"降落消耗燃料: {takeoff_gravity_cost+takeoff_speed_cost+takeoff_friction_cost:.2f}"
+        distance = math.sqrt(dx**2 + dy**2)
+        takeoff_gravity_cost = (
+            planet.mass
+            * G
+            * self.landing_pod_weight
+            * (distance - planet.radius)
+            / 1e11
+            / 3
+        )
+        takeoff_speed_cost = self.velocity[0] ** 2 * self.landing_pod_weight / 1e3 / 3
+        takeoff_friction_cost = (
+            (planet.atmosphere["radius"] - planet.radius)
+            * self.velocity[0]
+            * planet.atmosphere["density"]
+            / 1e11
+        )
+        self.game.message2 = (
+            f"planet.radius:{planet.radius:.2f},rewards:{planet.provisions}"
+        )
+        # self.game.message=f"takeoff_gravity_cost{takeoff_gravity_cost:.2f}takeoff_speed_cost{takeoff_speed_cost:.2f},takeoff_friction_cost{takeoff_friction_cost:.2f}"
+        if self.landing_condition == "may land":
+            self.game.message = f"降落消耗燃料: {takeoff_gravity_cost+takeoff_speed_cost+takeoff_friction_cost:.2f}"
         else:
-            self.game.message=f"无法降落"
-        #TODO
+            self.game.message = f"无法降落"
+        # TODO
         """
         提示无法降落的音效
         """
 
         if not game.land:
             return
-        self.fuel-=takeoff_gravity_cost
-        self.fuel-=takeoff_speed_cost
-        self.fuel-=takeoff_friction_cost
+        self.fuel -= takeoff_gravity_cost
+        self.fuel -= takeoff_speed_cost
+        self.fuel -= takeoff_friction_cost
 
-        planet.have_achieved=True
+        planet.have_achieved = True
 
-        stats=planet.provisions
+        stats = planet.provisions
 
-        if len(stats.keys())>0:
+        if len(stats.keys()) > 0:
             for k in stats.keys():
                 exec(f"self.{k}+={stats[k]}")
-            #print(stats)
+            # print(stats)
 
-        planet.provisions={}
-        self.game.land=False
-        self.game.temp_message=f"降落成功,获得{stats}"
+        planet.provisions = {}
+        self.game.land = False
+        self.game.temp_message = f"降落成功,获得{stats}"
 
-        #TODO
+        # TODO
         """
         降落成功音效
         """
-
 
 
 if __name__ == "__main__":
