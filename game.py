@@ -47,7 +47,7 @@ class Cosmoseek:
 
         # self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Cosmoseek")
-        pygame.display.set_icon(pygame.image.load("assets/ship_000.png"))
+        pygame.display.set_icon(pygame.image.load("assets/ship_111_0.png"))
         self.clock = pygame.time.Clock()
         self.message = ""
         self.message2 = ""
@@ -333,7 +333,6 @@ class Cosmoseek:
                         planets_to_show_info_i = i
 
             if planets_to_show_info_i:
-                print(planets_to_show_info_i)
                 self.planets[planets_to_show_info_i].draw_info()
 
             self.ship.predict(self.planets, self.rate, camera[2])
@@ -356,7 +355,7 @@ class Cosmoseek:
             self.ship.blit_me()
 
             font = pygame.font.Font('assets/Unifont-Minecraft.otf', 24)
-            info2 = f'得分 {self.score}   燃料 {self.ship.fuel:.2f}'
+            info2 = f'分数 {self.score}   燃料 {self.ship.fuel:.2f}'
             text2 = font.render(info2, True, (255, 255, 255))
             self.screen.blit(text2, (20, 20))
 
@@ -670,6 +669,7 @@ class Planet:
         if distance <= self.radius + 100:
             if self.have_achieved == False:
                 self.game.score += 1
+                play_sound('levelup.ogg')
                 self.have_achieved = True
 
     # def info_display(self):
@@ -706,12 +706,12 @@ class Ship:
         self.game = game
         self.screen = game.screen
         self.screen_rect = game.screen.get_rect()
-        self.image = pygame.image.load("assets/ship_000.png")
+        self.image = pygame.image.load("assets/ship_000_0.png")
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.center = [
-            (self.screen_rect.width - self.width) / 2,
-            (self.screen_rect.height - self.height),
+            self.screen_rect.width / 2,
+            self.screen_rect.height / 2,
         ]
 
         # 各推进器状态
@@ -744,8 +744,9 @@ class Ship:
     def A_V(self):
         # 响应用户输入
         self.image = pygame.image.load(
-            f"assets/ship_{int(self.push_left)}{int(self.push_middle)}{int(self.push_right)}.png"
+            f"assets/ship_{int(self.push_left)}{int(self.push_middle)}{int(self.push_right)}_{int(self.stop)}.png"
         )
+
         s_f = self.s_f * self.thruster_power
         if self.push_middle == True:
             if self.push_left == True and self.push_right == True:
@@ -803,12 +804,13 @@ class Ship:
             self.image,
             (
                 # 避免在宇宙视角下过小
-                max([self.width / 4, self.width / camera[2]]),
-                max([self.height / 4, self.height / camera[2]]),
+                max([self.width / 3, self.width / camera[2]]),
+                max([self.height / 3, self.height / camera[2]]),
             ),
         )
         self.new_image = pygame.transform.rotate(
-            self.new_image, self.angle * 180.0 / pi
+            self.new_image,
+            self.angle * 180.0 / pi,
         )
 
     def move(self, rate):
@@ -822,9 +824,9 @@ class Ship:
         self.force_y = 0
 
     def blit_me(self):
-        if camera[2] > 4:
+        if camera[2] > 3:
             rect_ship = get_bounding_rect(
-                self.width / 4 * camera[2], self.height / 4 * camera[2], self.angle
+                self.width / 3 * camera[2], self.height / 3 * camera[2], self.angle
             )
         else:
             rect_ship = get_bounding_rect(self.width, self.height, self.angle)
