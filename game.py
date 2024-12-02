@@ -29,19 +29,15 @@ font_24 = pygame.font.Font('assets/Unifont-Minecraft.otf', 24)
 
 
 class Cosmoseek:
-    NUM_PLANETS = 1000
-    planets = []
-
-    # 创建星球
+    # 创建游戏
     def __init__(self):
+        self.NUM_PLANETS = 1000
+        self.planets = []
         pygame.init()
         pygame.mixer.init()
         pygame.mixer.music.load("assets/Stargazer (Planetarium).mp3")
         pygame.mixer.music.play(-1)
-
-        self.planets = []
         self.score = 0
-        self.game_over_condition = False
 
         # 全屏
         if is_fullscreen:
@@ -64,7 +60,7 @@ class Cosmoseek:
         self.key_minus = False
         self.key_plus = False
         self.locating_ship = False
-        self.land = False
+
         self.temp_message = ""
         self.mouse_pos = [0, 0]
         prizes = []
@@ -255,6 +251,7 @@ class Cosmoseek:
             # print(len(self.planets))
 
     def game_over(self):
+        # 把游戏结束事件封装 可在其他游戏结束的情况时调用
         # 创建游戏结束提示
         background_image = pygame.image.load(
             "assets/game_over_background.png"
@@ -312,160 +309,103 @@ class Cosmoseek:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
                         waiting = False
-                        return True
+                        self.__init__()
+                        game.locating_ship = True
                     if event.key == pygame.K_q:
                         exit()
-        return False
+        return None
 
-    def run_game(self):
+    def camera_calculate(self):
+        # 视角计算
         global camera, camera_animation_from, camera_animation_to, camera_animation_state
-        # 主循环
-        while self.rungame:
-            self._check_event()
-            self.screen.fill((3, 12, 19))
-            self.clock.tick(60)
-            # Ease-Out: 1-(1-t)^3
-            if camera_animation_state < 1.0:
-                camera_animation_state += 1.0 / camera_animation_frames
-                if not self.locating_ship:
-                    camera[0] = camera_animation_from[0] + (
-                        camera_animation_to[0] - camera_animation_from[0]
-                    ) * (1 - (1 - camera_animation_state) ** 3)
-                    camera[1] = camera_animation_from[1] + (
-                        camera_animation_to[1] - camera_animation_from[1]
-                    ) * (1 - (1 - camera_animation_state) ** 3)
-                camera[2] = camera_animation_from[2] + (
-                    camera_animation_to[2] - camera_animation_from[2]
+        # Ease-Out: 1-(1-t)^3
+        if camera_animation_state < 1.0:
+            camera_animation_state += 1.0 / camera_animation_frames
+            if not self.locating_ship:
+                camera[0] = camera_animation_from[0] + (
+                    camera_animation_to[0] - camera_animation_from[0]
                 ) * (1 - (1 - camera_animation_state) ** 3)
+                camera[1] = camera_animation_from[1] + (
+                    camera_animation_to[1] - camera_animation_from[1]
+                ) * (1 - (1 - camera_animation_state) ** 3)
+            camera[2] = camera_animation_from[2] + (
+                camera_animation_to[2] - camera_animation_from[2]
+            ) * (1 - (1 - camera_animation_state) ** 3)
 
-            self.ship.A_V()
-            self.ship.calc_closest_planets(self.planets)
-            self.ship.calc_main_planets(self.planets)
-            self.ship.gravity_pull(self.planets)
-            self.ship.atmosphere_drag(self.planets)
-            self.ship.move(self.rate)
+    def planet_excution(self):
+        planets_to_show_info_i = None
+        planets_to_show_info_distance = None
+        for i, planet in enumerate(self.planets):
+            # planet.info_display()
+            planet.crash()  # 处理坠毁
+            planet.update_position()
+            draw_x = (planet.x - planet.radius - camera[0]) / camera[
+                2
+            ] + planet.radius / camera[2]
+            draw_y = (planet.y - planet.radius - camera[1]) / camera[
+                2
+            ] + planet.radius / camera[2]
+            planet.calc_render_position(draw_x, draw_y, camera[2])
+            planet.draw_atmosphere(self.screen)
+            planet.draw2(self.screen)
+            if planet.p_id in self.ship.closest_planets:
+                planet.name_render(self.screen)
+            distance = sqrt(
+                (planet.render_x - self.mouse_pos[0]) ** 2
+                + (planet.render_y - self.mouse_pos[1]) ** 2
+            )
 
-            if self.locating_ship == True:
-                camera[0] = self.ship.center[0] - 0.5 * camera[2] * screen_rect[2]
-                camera[1] = self.ship.center[1] - 0.5 * camera[2] * screen_rect[3]
-            # camera[2] = camera_animation_to[2]
-
-            # self.draw_grid(800, (20, 29, 26))
-            # self.draw_grid(8000, (40, 49, 46))
-            # self.draw_grid(80000, (60, 69, 76))
-            self.draw_grid(4000 * 5**1, 15)
-            self.draw_grid(4000 * 5**2, 20)
-            self.draw_grid(4000 * 5**3, 25)
-            self.draw_grid(4000 * 5**4, 30)
-            self.draw_grid(4000 * 5**5, 35)
-
-            # 更新位置并绘制星球
-
-            planets_to_show_info_i = None
-            planets_to_show_info_distance = None
-
-            for i, planet in enumerate(self.planets):
-                # planet.info_display()
-                planet.crash_land()
-                planet.update_position()
-                draw_x = (planet.x - planet.radius - camera[0]) / camera[
-                    2
-                ] + planet.radius / camera[2]
-                draw_y = (planet.y - planet.radius - camera[1]) / camera[
-                    2
-                ] + planet.radius / camera[2]
-                planet.calc_render_position(draw_x, draw_y, camera[2])
-                planet.draw_atmosphere(self.screen)
-                planet.draw2(self.screen)
-                if planet.p_id in self.ship.closest_planets:
-                    planet.name_render(self.screen)
-                distance = sqrt(
-                    (planet.render_x - self.mouse_pos[0]) ** 2
-                    + (planet.render_y - self.mouse_pos[1]) ** 2
-                )
-
-                if (
-                    distance < max(min_size, planet.radius / planet.render_scale) + 24
-                    and 0 <= planet.render_x <= self.WIDTH
-                    and 0 <= planet.render_y <= self.HEIGHT
+            if (
+                distance < max(min_size, planet.radius / planet.render_scale) + 24
+                and 0 <= planet.render_x <= self.WIDTH
+                and 0 <= planet.render_y <= self.HEIGHT
+            ):
+                if planets_to_show_info_i is None or (
+                    planets_to_show_info_i and distance < planets_to_show_info_distance
                 ):
-                    if planets_to_show_info_i is None or (
-                        planets_to_show_info_i
-                        and distance < planets_to_show_info_distance
-                    ):
-                        planets_to_show_info_distance = distance
-                        planets_to_show_info_i = i
-                    # print(distance,max(min_size,planet.radius / camera[2]))
-                    # self.is_click=False
-                # else:
-                #    planet.draw_info_condition = False
-                # if 0<=planet.render_x<=self.WIDTH and 0<=planet.render_y<=self.HEIGHT:
-                # print(distance,max(min_size,planet.radius / camera[2]),planet.p_id)
-            if planets_to_show_info_i:
-                self.planets[planets_to_show_info_i].draw_info()
+                    planets_to_show_info_distance = distance
+                    planets_to_show_info_i = i
 
-            self.ship.predict(self.planets, self.rate, camera[2])
-            self.ship.draw_prediction(self.screen, camera, screen_rect)
-            self.ship.check_landing_conditions()
-            self.ship.attempt_land(self.planets[self.ship.main_planets[0]])
-            # for i, planet in enumerate(self.planets):
-            #     dx = planet.x - self.ship.center[0]
-            #     dy = planet.y - self.ship.center[1]
-            #     distance = math.sqrt(dx**2 + dy**2)
-            #     if distance > 0:  # 避免除以零
-            #         force = G * 10 * planet.mass / (distance**2)
-            #         ax = force * dx / distance / 10
-            #         ay = force * dy / distance / 10
-            #         self.ship.velocity[1] += ax
-            #         self.ship.velocity[2] += ay
-            #         self.ship.velocity[0] = sqrt(
-            #             self.ship.velocity[1] ** 2 + self.ship.velocity[2] ** 2.0
-            #         )
-            self.ship.blit_me()
+        if planets_to_show_info_i:
+            self.planets[planets_to_show_info_i].draw_info()
+            # print(distance,max(min_size,planet.radius / camera[2]))
+            # self.is_click=False
+        # else:
+        #    planet.draw_info_condition = False
+        # if 0<=planet.render_x<=self.WIDTH and 0<=planet.render_y<=self.HEIGHT:
+        # print(distance,max(min_size,planet.radius / camera[2]),planet.p_id)
 
-            info_offset = 32
+    def runing_info(self):
+        # 运行信息显示
+        info_offset = 32
+        font = font_24
+        info2 = f'分数 {self.score}   燃料 {self.ship.fuel:.2f}'
+        text2 = font.render(info2, True, (255, 255, 255))
+        self.screen.blit(text2, (info_offset + 20, info_offset + 20))
 
-            font = font_24
-            info2 = f'分数 {self.score}   燃料 {self.ship.fuel:.2f}'
-            text2 = font.render(info2, True, (255, 255, 255))
-            self.screen.blit(text2, (info_offset + 20, info_offset + 20))
+        info5 = f'受力X {self.ship.force_x:.2f}   受力Y {self.ship.force_y:.2f}   推进效率 {self.ship.thruster_efficiency:.2f}   推进力 {self.ship.thruster_power:.2f}'
+        text5 = font.render(info5, True, (255, 255, 255))
+        self.screen.blit(text5, (info_offset + 20, info_offset + 70))
 
-            info5 = f'受力X {self.ship.force_x:.2f}   受力Y {self.ship.force_y:.2f}   推进效率 {self.ship.thruster_efficiency:.2f}   推进力 {self.ship.thruster_power:.2f}'
-            text5 = font.render(info5, True, (255, 255, 255))
-            self.screen.blit(text5, (info_offset + 20, info_offset + 70))
+        info = f'角度 {self.ship.angle:.2f}   转速 {self.ship.rotation_speed:.2f}   方向 {self.ship.direction[0]:.2f}, {self.ship.direction[1]:.2f}   加速度 {self.ship.acceleration:.2f}   速率 {self.ship.velocity[0]:.2f}, {self.ship.velocity[1]:.2f}, {self.ship.velocity[2]:.2f}'
+        text = font.render(info, True, (255, 255, 255))
+        self.screen.blit(text, (info_offset + 20, info_offset + 120))
 
-            info = f'角度 {self.ship.angle:.2f}   转速 {self.ship.rotation_speed:.2f}   方向 {self.ship.direction[0]:.2f}, {self.ship.direction[1]:.2f}   加速度 {self.ship.acceleration:.2f}   速率 {self.ship.velocity[0]:.2f}, {self.ship.velocity[1]:.2f}, {self.ship.velocity[2]:.2f}'
-            text = font.render(info, True, (255, 255, 255))
-            self.screen.blit(text, (info_offset + 20, info_offset + 120))
+        # self.message = f'燃料 {self.ship.fuel:.2f}   受力x {self.ship.force_x:.2f}   受力y {self.ship.force_y:.2f}, {self.ship.direction[1]:.2f}'
+        # print(self.message2)
+        text4 = font.render(self.message2, True, (255, 255, 255))  # 星球信息
+        self.screen.blit(text4, (info_offset + 20, info_offset + 170))
 
-            # self.message = f'燃料 {self.ship.fuel:.2f}   受力x {self.ship.force_x:.2f}   受力y {self.ship.force_y:.2f}, {self.ship.direction[1]:.2f}'
-            # print(self.message2)
-            text4 = font.render(self.message2, True, (255, 255, 255))  # 星球信息
-            self.screen.blit(text4, (info_offset + 20, info_offset + 170))
+        text3 = font.render(self.message, True, (255, 255, 255))  # 降落消耗燃料信息
+        self.screen.blit(text3, (info_offset + 20, info_offset + 220))
 
-            text3 = font.render(self.message, True, (255, 255, 255))  # 降落消耗燃料信息
-            self.screen.blit(text3, (info_offset + 20, info_offset + 220))
+        rate_info = f'变速 {self.rate:.0f}x'
+        rate_text = font.render(rate_info, True, (255, 255, 255))
+        self.screen.blit(rate_text, (info_offset + 20, info_offset + 270))
 
-            rate_info = f'变速 {self.rate:.0f}x'
-            rate_text = font.render(rate_info, True, (255, 255, 255))
-            self.screen.blit(rate_text, (info_offset + 20, info_offset + 270))
-
-            if pygame.time.get_ticks() - text_temp_tick < 600:
-                text_temp = font.render(self.temp_message, True, (255, 255, 255))
-                self.screen.blit(text_temp, (info_offset + 20, info_offset + 320))
-
-            pygame.display.flip()
-
-            # 处理燃料耗尽
-            if self.ship.fuel <= 0:
-                if self.game_over():
-                    self.__init__()
-                    game.locating_ship = True
-            # 处理游戏结束的情况
-            if self.game_over_condition == True:
-                if self.game_over():
-                    self.__init__()
-                    game.locating_ship = True
+        if pygame.time.get_ticks() - text_temp_tick < 600:
+            text_temp = font.render(self.temp_message, True, (255, 255, 255))
+            self.screen.blit(text_temp, (info_offset + 20, info_offset + 320))
 
     def draw_grid(self, grid_size_original, color):
         color = (color, color + 9, color + 16)
@@ -499,7 +439,7 @@ class Cosmoseek:
             if event.type == pygame.QUIT:
                 exit()
             # 鼠标操作
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 self.mouse_pos = event.pos
                 if event.button == 1 and self.locating_ship != True:  # 左键按下开始拖动
                     self.is_click = True
@@ -538,7 +478,7 @@ class Cosmoseek:
                     # camera[3] *= 1.05
                 else:
                     self.is_click = False
-            elif event.type == pygame.MOUSEBUTTONUP:
+            if event.type == pygame.MOUSEBUTTONUP:
                 if (
                     event.button == 1 and self.locating_ship != True and pos_start_drag
                 ):  # 左键松开停止拖动
@@ -564,7 +504,7 @@ class Cosmoseek:
                     camera_animation_state = 0.0
                     is_dragging = False
 
-            elif event.type == pygame.MOUSEMOTION:
+            if event.type == pygame.MOUSEMOTION:
                 self.mouse_pos = event.pos
                 if is_dragging and last_mouse_pos:
                     dx = event.pos[0] - last_mouse_pos[0]
@@ -573,7 +513,8 @@ class Cosmoseek:
                     camera[1] -= dy * camera[2]
                     last_mouse_pos = event.pos
 
-            elif event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN:
+                # 退出游戏
                 if event.key == pygame.K_q:
                     exit()
 
@@ -584,6 +525,11 @@ class Cosmoseek:
                     # camera[0] = self.ship.center[0] - 0.5 * camera[2]
                     # camera[1] = self.ship.center[1] - 0.5 * camera[3]
 
+                # 重新开始游戏
+                if event.key == pygame.K_r:
+                    self.__init__()
+                    self.locating_ship = True
+
                 # 监测用户操作
                 if event.key == pygame.K_w:
                     self.ship.push_middle = True
@@ -593,6 +539,7 @@ class Cosmoseek:
                     self.ship.push_left = True
                 if event.key == pygame.K_d:
                     self.ship.push_right = True
+
                 if event.key == pygame.K_EQUALS:
                     if self.key_plus == False:
                         if self.rate < 59049:
@@ -616,17 +563,20 @@ class Cosmoseek:
                             play_sound('minus.ogg')
                     self.key_minus = True
                 if event.key == pygame.K_l:
-                    if self.ship.landing_condition == "may land":
-                        play_sound('challenge_complete.ogg')
-                        self.land = True
-                    elif self.ship.landing_condition == "too far":
-                        play_sound('buzzer.ogg')
-                        text_temp_tick = pygame.time.get_ticks()
-                        self.temp_message = "距离太远，无法降落"
-                    elif self.ship.landing_condition == "already landed":
-                        play_sound('buzzer.ogg')
-                        text_temp_tick = pygame.time.get_ticks()
-                        self.temp_message = "已经降落在这个星球上过了"
+                    self.ship.land()
+                    # 更新为ship的成员函数
+                    # if self.ship.landing_condition == "may land":
+                    #     play_sound('challenge_complete.ogg')
+                    #     self.land = True
+                    # elif self.ship.landing_condition == "too far":
+                    #     play_sound('buzzer.ogg')
+                    #     text_temp_tick = pygame.time.get_ticks()
+                    #     self.temp_message = "距离太远，无法降落"
+                    # elif self.ship.landing_condition == "already landed":
+                    #     play_sound('buzzer.ogg')
+                    #     text_temp_tick = pygame.time.get_ticks()
+                    #     self.temp_message = "已经降落在这个星球上过了"
+
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_w:
                     self.ship.push_middle = False
@@ -641,8 +591,49 @@ class Cosmoseek:
                 if event.key == pygame.K_MINUS:
                     self.key_minus = False
 
+    def run_game(self):
+        global camera, camera_animation_from, camera_animation_to, camera_animation_state
+        # 主循环
+        while self.rungame:
+            self._check_event()
+            self.screen.fill((3, 12, 19))
+            self.clock.tick(60)
 
-# 星球类
+            self.camera_calculate()
+            self.ship.A_V()
+            self.ship.calc_closest_planets(self.planets)
+            self.ship.calc_main_planets(self.planets)
+            self.ship.gravity_pull(self.planets)
+            self.ship.atmosphere_drag(self.planets)
+            self.ship.move(self.rate)
+
+            if self.locating_ship == True:
+                camera[0] = self.ship.center[0] - 0.5 * camera[2] * screen_rect[2]
+                camera[1] = self.ship.center[1] - 0.5 * camera[2] * screen_rect[3]
+
+            self.draw_grid(4000 * 5**1, 15)
+            self.draw_grid(4000 * 5**2, 20)
+            self.draw_grid(4000 * 5**3, 25)
+            self.draw_grid(4000 * 5**4, 30)
+            self.draw_grid(4000 * 5**5, 35)
+
+            # 遍历星球列表并执行相关操作
+            self.planet_excution()
+
+            self.ship.predict(self.planets, self.rate, camera[2])
+            self.ship.draw_prediction(self.screen, camera, screen_rect)
+            self.ship.check_landing_conditions()
+            self.ship.attempt_land(self.planets[self.ship.main_planets[0]])
+
+            self.ship.blit_me()
+            # 运行信息显示
+            self.runing_info()
+            pygame.display.flip()
+            # 处理燃料耗尽
+            if self.ship.fuel <= 0:
+                self.game_over()
+
+
 class Planet:
     def __init__(
         self,
@@ -815,7 +806,7 @@ class Planet:
             text = font_20.render(info, True, (255, 255, 255))
             screen.blit(text, (x, y))
 
-    def crash_land(self):
+    def crash(self):
         distance = sqrt(
             (self.x - self.ship.center[0]) ** 2 + (self.y - self.ship.center[1]) ** 2
         )
@@ -826,7 +817,7 @@ class Planet:
         if distance <= self.radius:
             # 坠机
             play_sound(f'blast1.ogg')
-            self.game.game_over_condition = True
+            self.game.game_over()
         # 进入大气圈
         # if distance<=self.radius+100:
         # if self.have_achieved == False:
@@ -834,8 +825,7 @@ class Planet:
         #    self.have_achieved = True
 
     def draw_info(self):
-
-        information = f"星球信息: id:{self.p_id} 半径:{int(self.radius)} 质量:{int(self.mass)} 大气层半径:{int(self.atmosphere["radius"])}"
+        # information = f"星球信息: id:{self.p_id} 半径:{int(self.radius)} 质量:{int(self.mass)} 大气层半径:{int(self.atmosphere["radius"])}"
         if not self.got:
             check_dic = {
                 "fuel": "补充燃料",
@@ -939,6 +929,20 @@ class Ship:
         self.prediction_nums = 16
         self.landing_pod_weight = 5
         self.landing_condition = "too far"
+        self.is_land = False
+        self.other_forces = [0, 0]
+        # 避免重新启动时找不到new_image
+        self.new_image = pygame.transform.scale(
+            self.image,
+            (
+                # 避免在宇宙视角下过小
+                max([self.width / 3, self.width / camera[2]]),
+                max([self.height / 3, self.height / camera[2]]),
+            ),
+        )
+        self.new_image = pygame.transform.rotate(
+            self.new_image, self.angle * 180.0 / pi
+        )
 
     def A_V(self):
         # 响应用户输入
@@ -949,7 +953,7 @@ class Ship:
         s_f = self.s_f * self.thruster_power
         if self.push_middle == True:
             if self.push_left == True and self.push_right == True:
-                self.acceleration = 0.7 * s_f
+                self.acceleration = 0.5 * s_f
                 self.rotation_speed = 0.0
             elif self.push_left == True and self.push_right == False:
                 self.acceleration = 0.4 * s_f
@@ -1241,13 +1245,28 @@ class Ship:
     # }
     # for k in stats.keys():
     #     dic[k]+=stats[k]
+
+    def land(self):
+        global text_temp_tick
+        if self.landing_condition == "may land":
+            play_sound('challenge_complete.ogg')
+            self.is_land = True
+        elif self.landing_condition == "too far":
+            play_sound('buzzer.ogg')
+            text_temp_tick = pygame.time.get_ticks()
+            self.game.temp_message = "距离太远，无法降落"
+        elif self.landing_condition == "already landed":
+            play_sound('buzzer.ogg')
+            text_temp_tick = pygame.time.get_ticks()
+            self.game.temp_message = "已经降落在这个星球上过了"
+
     def check_landing_conditions(self):
         planet = self.game.planets[self.main_planets[0]]
         dx = -planet.x + self.center[0]
         dy = -planet.y + self.center[1]
         distance = math.sqrt(dx**2 + dy**2)
 
-        if distance > 5 * planet.radius:
+        if distance > 2 * planet.radius:
             self.landing_condition = "too far"
         elif planet.have_achieved:
             self.landing_condition = "already landed"
@@ -1301,7 +1320,7 @@ class Ship:
             else:
                 self.game.message = f"无法降落"
 
-            if not game.land:
+            if not self.is_land:
                 return
             self.fuel -= takeoff_gravity_cost
             self.fuel -= takeoff_speed_cost
@@ -1317,11 +1336,12 @@ class Ship:
                 # print(stats)
 
             planet.provisions = {}
-            self.game.land = False
+            self.is_land = False
             text_temp_tick = pygame.time.get_ticks()
             self.game.temp_message = f"降落成功，获得[{', '.join(msg_provisions)}]"
             self.game.score += 1
             planet.got = ""
+
         elif planet.typ == "gas_giant":
             dx = -planet.x + self.center[0]
             dy = -planet.y + self.center[1]
@@ -1362,7 +1382,7 @@ class Ship:
             else:
                 self.game.message = f"无法采集"
 
-            if not game.land:
+            if not self.is_land:
                 return
             self.fuel -= takeoff_gravity_cost
 
@@ -1373,9 +1393,10 @@ class Ship:
             if len(stats.keys()) > 0:
                 for k in stats.keys():
                     exec(f"self.{k}+={stats[k]}")
+                # print(stats)
 
             planet.provisions = {}
-            self.game.land = False
+            self.is_land = False
             text_temp_tick = pygame.time.get_ticks()
             self.game.temp_message = f"降落成功，获得[{', '.join(msg_provisions)}]"
             self.game.score += 1
@@ -1392,7 +1413,6 @@ if sys.platform == 'win32':
         ctypes.windll.user32.SetProcessDPIAware()
     except AttributeError:
         pass
-
 
 if __name__ == "__main__":
     game = Cosmoseek()
